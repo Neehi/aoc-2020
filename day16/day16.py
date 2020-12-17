@@ -1,4 +1,5 @@
 import os
+from operator import mul
 
 with open(os.path.join(os.path.dirname(__file__), 'input.txt')) as file:
   fields_input, your_ticket_input, nearby_tickets_input = [lines.split('\n')
@@ -11,33 +12,29 @@ fields = {
 your_ticket = [int(x) for x in your_ticket_input[1].split(',')]
 nearby_tickets = [[int(x) for x in line.split(',')] for line in nearby_tickets_input[1:]]
 
-possible_fields = [set() for field in fields]
+errors = []
 error_rate = 0
-
-for ticket in nearby_tickets:
-  valid_fields = []
-  for i, x in enumerate(ticket):
-    matching_fields = [j for j, field in enumerate(fields.values()) if any(m <= x <= n for m, n in field)]
-    if matching_fields:
-      valid_fields.append(matching_fields)
-    else:
+for i, ticket in enumerate(nearby_tickets):
+  for x in ticket:
+    if all(x not in range(m, n + 1) for ranges in fields.values() for m, n in ranges):
+      errors.append(i)
       error_rate += x
-  if len(valid_fields) == len(fields):
-    for i, x in enumerate(valid_fields):
-      possible_fields[i] = possible_fields[i].intersection(x) if possible_fields[i] else set(x)
 
 print('Part One: %d' % error_rate)
 
+possible_fields = [set() for field in fields]
+for i, ticket in enumerate(nearby_tickets):
+  if i not in errors:
+    for j, x in enumerate(ticket):
+      possibles = [k for k, ranges in enumerate(fields.values()) if any(m <= x <= n for m, n in ranges)]
+      possible_fields[j] = possible_fields[j].intersection(possibles) if possible_fields[j] else set(possibles)
+
 while any(len(s) > 1 for s in possible_fields):
-  possible_fields = [
-    s if len(s) == 1 else s ^ s.intersection([next(iter(x)) for x in possible_fields if len(x) == 1])
-    for s in possible_fields
-  ]
+  for i, s in enumerate(possible_fields):
+    if len(s) > 1:
+      possible_fields[i] ^= s.intersection([next(iter(x)) for x in possible_fields if len(x) == 1])
 matched_fields = [next(iter(s)) for s in possible_fields]
 
-departure_hash = reduce(
-  lambda a, b: a * b,
-  [your_ticket[i] for i, x in enumerate(matched_fields) if fields.keys()[x].startswith('departure')]
-)
+departure_hash = reduce(mul, [n for x, n in zip(matched_fields, your_ticket) if fields.keys()[x].startswith('departure')])
 
 print('Part Two: %d' % departure_hash)
