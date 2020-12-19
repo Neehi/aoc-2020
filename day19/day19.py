@@ -11,10 +11,27 @@ def parse_rule(id):
   rule = rules[id]
   if rule == 'a' or rule == 'b':
     return rule
-  return '(?:' + ''.join([parse_rule(int(x)) if x != '|' else x for x in rule.split()]) + ')'
+  return '(?:' + ''.join([x if x in '|+' or x.startswith('{') else parse_rule(int(x)) for x in rule.split()]) + ')'
 
-def part_one():
-  rule_0 = re.compile('^' + parse_rule(0) + '$')
-  return sum([re.match(rule_0, message) is not None for message in messages])
+def is_message_valid(message, rule):
+  return re.match('^' + rule + '$', message) is not None
 
-print('Part One: %d' % part_one())
+# Part 1
+
+rule_0 = parse_rule(0)
+part_one = sum([is_message_valid(message, rule_0) for message in messages])
+
+print('Part One: %d' % part_one)
+
+# Part 2
+
+# Replace rules 8 and 11:
+#   42 --> 42 | 42 8 --> 42 42 8... --> (42)+
+#   42 31 --> 42 31 | 42 11 31 --> 42 42 11 31 31... --> (42){n}(31){n}
+rules[8] = '42 +'
+rules[11] = '42 {n} 31 {n}'
+
+rule_0 = parse_rule(0)
+part_two = sum([sum([is_message_valid(message, rule_0.replace('n', str(n))) for n in range(1, 6)]) for message in messages])
+
+print('Part Two: %d' % part_two)
