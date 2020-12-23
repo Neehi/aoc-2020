@@ -30,4 +30,12 @@ def play_cups(cups, moves):
 
   return final_state
 
+# Part 1
+
 print('Part One: %s' % ''.join([str(x) for x in play_cups(cups, 100)]))
+
+# Part 2
+
+cups = cups + list(range(max(cups)+1, 1000000+1))
+result = play_cups(cups, 10000000)
+print('Part Two: %d' % (result[0] * result[1]))
